@@ -1,26 +1,17 @@
-build :: () {
-    w := compiler_create_workspace("Target Program");
+or_return_build :: () {
+    w := compiler_create_workspace("or_return workspace");
     if !w {
         print("Workspace creation failed.\n");
         return;
     }
 
-    target_options := get_build_options(w);
-    target_options.output_executable_name = "or_return";
-    set_build_options(target_options, w);
-
     compiler_begin_intercept(w);
-
-    add_build_file("./or_return.jai",  w);
 
     message_loop();
 
     compiler_end_intercept(w);
-
-    set_build_options_dc(.{do_output=false});
 }
 
-#run build();
 
 message_loop :: () {
     while true {
@@ -43,7 +34,6 @@ message_loop :: () {
 }
 
 handle_typechecked :: (typechecked: *Message_Typechecked) {
-    builder: String_Builder;
     for to: typechecked.procedure_bodies {
         body := to.expression;
         if body.body_flags & .ALREADY_MODIFIED {
@@ -113,8 +103,8 @@ handle_typechecked :: (typechecked: *Message_Typechecked) {
     }
 }
 
+#scope_file
+
 #import "Basic";
 #import "Compiler";
-#import "String";
 #import "Code_Visit";
-using,only(print_vars) Print_Vars :: #import "Print_Vars";
