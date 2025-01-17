@@ -71,6 +71,13 @@ TBD
 
 Maybe???
 
+## PRO TIP
+
+These macros hide control flow from you because they're not syntactically highlighted, so it's easy to miss them when you quickly skim the code.
+
+The Pro Tip (tm) is to add keyword highlight for `or_return` and such in your favorite code editor, so they're visible even if you just read the code diagonally.
+
+
 ## license
 
 MIT
