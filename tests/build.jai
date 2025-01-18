@@ -15,7 +15,7 @@ build :: () {
 
     add_build_file("./tests.jai",  w);
 
-    or_return_build();
+    or_return_build(w);
     compiler_end_intercept(w);
 
     set_build_options_dc(.{do_output=false});

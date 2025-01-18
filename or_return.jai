@@ -29,53 +29,8 @@ default_of_type_as_string :: (ti: *Type_Info) -> string {
 }
 
 // TODO: We're completely disrespecting #must here. There's no way to set #must in modify, so we need to improve our message loop
-or_return :: ($code: Code, $outer_proc_header: Code = (#code dummy), $declared_named_returns: ..string) -> $T1, $T2, $T3, $T4, $T5, $T6, $T7, $T8, $T9, $T10 #expand 
-#modify {
-    root, expressions := Compiler.compiler_get_nodes(code);
-    if root.kind != .PROCEDURE_CALL {
-        return false, "or_return macro only supports procedure_calls";
-    }
-
-    call := cast(*Compiler.Code_Procedure_Call)root;
-    proc_expr := call.resolved_procedure_expression;
-
-    if proc_expr.kind != .PROCEDURE_HEADER {
-        return false, "Unexpected resolved procedure expression";
-    }
-
-    header := cast(*Compiler.Code_Procedure_Header)proc_expr;
-
-    return_values := header.returns.count;
-    if return_values < 1 {
-        return false, tprint("Procedure should have at least a single return value, but it has %", return_values);
-    }
-
-    last_return := header.returns[return_values-1].type_inst;
-    last_return_type := Compiler.get_type(last_return.result);
-    ti := cast(*Type_Info)last_return_type;
-    if ti.type == .STRUCT {
-        return false, tprint("The last return value of the procedure `%` passed to or_return is a struct `%`.\nStructs can't be evaluated as booleans, so or_return doesn't support them.", header.name, last_return_type);
-    }
-
-    T1, T2, T3, T4, T5, T6, T7, T8, T9, T10 = bool;
-    for 0..return_values - 1 {
-        return_ := header.returns[it].type_inst;
-        return_type := Compiler.get_type(return_.result);
-        if it == 0 T1  = return_type;
-        if it == 1 T2  = return_type;
-        if it == 2 T3  = return_type;
-        if it == 3 T4  = return_type;
-        if it == 4 T5  = return_type;
-        if it == 5 T6  = return_type;
-        if it == 6 T7  = return_type;
-        if it == 7 T8  = return_type;
-        if it == 8 T9  = return_type;
-        if it == 9 T10 = return_type;
-    }
-    return true;
-}
-{
-    #insert,scope(code) -> string {
+or_return_inner :: ($code_returns: int, $code: Code, $outer_proc_header: Code = (#code dummy), $declared_named_returns: ..string) -> string #expand {
+    return #run -> string {
         root, expressions := Compiler.compiler_get_nodes(code);
 
         outer := Compiler.compiler_get_nodes(outer_proc_header);
@@ -158,16 +113,13 @@ or_return :: ($code: Code, $outer_proc_header: Code = (#code dummy), $declared_n
                 append(*builder, ", ");
             }
         }
-        for 0..10-count-1 {
-            append(*builder, ", false");
-        }
         append(*builder, ";");
         append(*builder, "\n}\n");
 
         result_code := builder_to_string(*builder);
 
         return result_code;
-    }
+    };
 }
 
 #scope_file
