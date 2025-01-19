@@ -150,5 +150,3 @@ returns_struct :: () -> Res1 {
 
 
 #import "Basic";
-#import "Compiler";
-#import "Print_Vars";
