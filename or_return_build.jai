@@ -1,34 +1,14 @@
+// You can call this if your build script doesn't have a custom message loop
+// Call this after compiler_begin_intercept and after adding your build file
 or_return_build :: (w: Workspace) {
+    or_return_add_source(w);
 
-    for 1..10 {
-        returns_array: [..]string;
-        defaults_array: [..]string;
-        designators_array: [..]string;
-        returns: string;
-        defaults: string;
-        designators: string;
-
-        for 1..it {
-            array_add(*returns_array, tprint("$T%", it));
-            array_add(*defaults_array, tprint("T%", it));
-            array_add(*designators_array, tprint("if it == % T% = return_type;", it - 1, it));
-        }
-        returns = join(..returns_array, ", ");
-        defaults = tprint("% = bool;", join(..defaults_array, ", "));
-        designators = join(..designators_array, "\n        ");
-        add_build_string(tprint(OR_RETURN_TEMPLATE, returns, defaults, designators, it), w);
-    }
-
-    message_loop();
-}
-
-message_loop :: () {
     while true {
         message := compiler_wait_for_message();
         if message.kind == {
         case .TYPECHECKED;
             typechecked := cast(*Message_Typechecked) message;
-            handle_typechecked(typechecked);
+            or_return_handle_typechecked(typechecked);
 
         case .COMPLETE;
             break;
@@ -36,7 +16,8 @@ message_loop :: () {
     }
 }
 
-handle_typechecked :: (typechecked: *Message_Typechecked) {
+// Call this inside of your metaprogram loop.
+or_return_handle_typechecked :: (typechecked: *Message_Typechecked) {
     for to: typechecked.procedure_bodies {
         body := to.expression;
         if body.body_flags & .ALREADY_MODIFIED {
@@ -151,6 +132,63 @@ or_return :: ($code: Code, $outer_proc_header: Code = (#code dummy), $declared_n
 }
 
 DONE_FR
+
+or_return_add_source :: (w: Workspace) {
+    for 1..10 {
+        returns_array: [..]string;
+        defaults_array: [..]string;
+        designators_array: [..]string;
+        returns: string;
+        defaults: string;
+        designators: string;
+
+        for 1..it {
+            array_add(*returns_array, tprint("$T%", it));
+            array_add(*defaults_array, tprint("T%", it));
+            array_add(*designators_array, tprint("if it == % T% = return_type;", it - 1, it));
+        }
+        returns = join(..returns_array, ", ");
+        defaults = tprint("% = bool;", join(..defaults_array, ", "));
+        designators = join(..designators_array, "\n        ");
+        add_build_string(tprint(OR_RETURN_TEMPLATE, returns, defaults, designators, it), w);
+    }
+    add_build_string("Compiler :: #import \"Compiler\";", w);
+}
+
+// Experimental metaprogram plugin, ignore this for now.
+add_source :: (p: *Metaprogram_Plugin)  {
+    plugin := cast(*Or_Return_Plugin) p;
+    w := p.workspace;
+    assert(w >= 0);
+
+    inline or_return_add_source(w);
+}
+
+message :: (p: *Metaprogram_Plugin, message: *Message) {
+    plugin := cast(*Or_Return_Plugin) p;
+
+    if message.kind != .TYPECHECKED return;
+
+    typechecked := cast(*Message_Typechecked) message;
+    inline or_return_handle_typechecked(typechecked);
+}
+
+shutdown :: (p: *Metaprogram_Plugin) {
+    free(p);
+}
+
+get_plugin :: () -> *Metaprogram_Plugin {
+    p := New(Or_Return_Plugin);
+    p.add_source = add_source;
+    p.message = message;
+    p.shutdown = shutdown;
+
+    return p;
+}
+
+Or_Return_Plugin :: struct {
+    #as using base: Metaprogram_Plugin;
+}
 
 #scope_file
 
