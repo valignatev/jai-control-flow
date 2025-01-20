@@ -66,9 +66,7 @@ In order to work, `or_return` requires you to execute its metaprogram in your bu
 - For now, in the first version, `or_return` only accepts procedure calls. But if it's useful, we can accept any expression where something evaluates to false. Let me know...
 
 - For now, `or_return` completely swallows `#must` directive, without propagating it to the caller.
-
-- For now, `or_return` pollutes the stack a bit with 10 return values (so it's enough for everyone (tm)). In future versions, we will create polymorphic headers for each individual case.
-
+- 
 ## or_else
 
 TBD
